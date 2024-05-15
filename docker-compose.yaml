@@ -1,0 +1,39 @@
+services:
+  #Lucee server
+  lucee:
+    image: lucee
+    ports:
+      - "8891:8888"
+      - "8091:8088"
+    environment:
+      LUCEE_JAVA_OPTS: "-javaagent:/opt/fusionreactor/instance/lucee/fusionreactor.jar=name=Lucee,address=8088 -agentpath:/opt/fusionreactor/instance/lucee/libfrjvmti_x64.so -Dfrlicense=CLOUD-IGASY-N5MFU-3ORV4-QBU5Q-S453G"
+      acceptEULA: "YES"
+      password: "admin"
+      FRNAME: "Lucee"
+
+    volumes:
+      - "./lucee/apps:/var/www/apps"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #mysql database
+  # mysql:
+  #   image: mysql:latest
+  #   ports:
+  #     - "3307:3306"
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: my-secret-pw
+  #     MYSQL_ROOT_HOST: "%"

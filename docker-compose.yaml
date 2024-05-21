@@ -16,7 +16,7 @@ services:
 
   #mysql database
   mysql:
-    image: mysql:latest
+    image: mysqldb
     ports:
       - "3307:3306"
     environment:

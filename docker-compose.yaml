@@ -18,9 +18,19 @@ services:
 
   #mysql database
   mysql:
-    image: mysqldb
+    image: mysqldb1
     ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: my-secret-pw
       MYSQL_ROOT_HOST: "%"
+
+  #jmeter
+  jmeter:
+    image: jmeter
+    deploy:
+      replicas: 1
+    volumes:
+      - type: bind
+        source: ./jmeter/cfload.jmx
+        target: /load.jmx

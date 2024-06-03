@@ -2,7 +2,7 @@
 
   myQuery = queryExecute(
    "SELECT * FROM user_details
-      WHERE user_id = :id,
+      WHERE user_id = :id",
       {id: randRange(1,22000,'SHA1PRNG')},
       {datasource = "mysql"}
     );

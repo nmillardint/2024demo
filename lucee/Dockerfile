@@ -6,7 +6,7 @@ RUN mkdir -p /opt/fusionreactor/instance/lucee
 
 #Adds the fusionreactor.jar file to the instance directory
 #ADD fusionreactor.jar /opt/fusionreactor/instance/steamstorefront
-ADD https://download.fusionreactor.io/FR/Latest/fusionreactor.jar /opt/fusionreactor/instance/lucee
+ADD Jar/fusionreactor.jar /opt/fusionreactor/instance/lucee
 
 #Adds the debug library file to the instance directory
 ADD https://download.fusionreactor.io/FR/Latest/libfrjvmti_x64.so /opt/fusionreactor/instance/lucee

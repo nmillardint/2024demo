@@ -1,4 +1,5 @@
 <cfscript>
+
   sleep(randRange(0,50,'SHA1PRNG')+100);
 
   myQuery = queryExecute(
@@ -11,4 +12,5 @@
   cfhttp(method="GET", charset="utf-8", url="https://some-random-api.ml/animal/raccoon", result="result") {
     cfhttpparam(name="q", type="url", value="cfml");
     }
+
 </cfscript>

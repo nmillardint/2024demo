@@ -1,0 +1,205 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"go.opentelemetry.io/otel/trace"
+)
+
+var (
+	endpoint       = "otelcollector:4318"
+	tracer         trace.Tracer
+	serviceName    = "test-go-server-http"
+	serviceVersion = "0.1.0"
+	lsEnvironment  = "dev"
+	meter          = sdkmetric.NewMeterProvider()
+	ometer         = otel.Meter("my-test-meter")
+
+	//Log levels
+	WarningLogger *log.Logger
+	InfoLogger    *log.Logger
+	ErrorLogger   *log.Logger
+)
+
+func setupMetrics(ctx context.Context) (*sdkmetric.MeterProvider, error) {
+
+	exporter, err := otlpmetrichttp.New(
+		ctx,
+		otlpmetrichttp.WithInsecure(),
+		otlpmetrichttp.WithEndpoint(endpoint),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// labels/tags/resources that are common to all metrics.
+	resource :=
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersionKey.String(serviceVersion),
+			attribute.String("environment", lsEnvironment),
+			attribute.String("test-attribute", "test-value"),
+		)
+
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(resource),
+		sdkmetric.WithReader(
+			// collects and exports metric data every 5 seconds.
+			sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(1*time.Second)),
+		),
+	)
+
+	otel.SetMeterProvider(mp)
+
+	return mp, nil
+}
+
+func setupTracing(ctx context.Context) (*sdktrace.TracerProvider, error) {
+
+	exporter, err := otlptracehttp.New(
+		ctx,
+		otlptracehttp.WithInsecure(),
+		otlptracehttp.WithEndpoint(endpoint),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resource :=
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersionKey.String(serviceVersion),
+			attribute.String("environment", lsEnvironment),
+		)
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource),
+	)
+
+	otel.SetTracerProvider(tp)
+
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		),
+	)
+
+	return tp, nil
+}
+
+func main() {
+
+	logFile, err := os.OpenFile("gooteldemo.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+		ErrorLogger.Println("Something went wrong")
+	}
+
+	//multiwriter
+	mw := io.MultiWriter(os.Stdout, logFile)
+	log.SetOutput(mw)
+
+	InfoLogger = log.New(mw, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	WarningLogger = log.New(mw, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
+	ErrorLogger = log.New(mw, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+
+	InfoLogger.Println("--------------------------------")
+	InfoLogger.Println("Starting the application...")
+
+	ctx := context.Background()
+
+	//metrics
+	{
+		mp, err := setupMetrics(ctx)
+
+		if err != nil {
+			panic(err)
+		}
+		defer mp.Shutdown(ctx)
+	}
+
+	//traces
+	{
+		tp, err := setupTracing(ctx)
+		if err != nil {
+			panic(err)
+		}
+		defer tp.Shutdown(ctx)
+	}
+
+	tracer = otel.Tracer(serviceName, trace.WithInstrumentationVersion(serviceVersion))
+	tracer := otel.Tracer("test-tracer")
+
+	// Attributes represent additional key-value descriptors that can be bound
+	// to a metric observer or recorder.
+	commonTraceAttrs := []attribute.KeyValue{
+		attribute.String("attrAtrace", "test1.1"),
+		attribute.String("attrBtrace", "test2"),
+		attribute.String("attrCtrace", "test3"),
+	}
+
+	//trace starts
+	ctx, span := tracer.Start(
+		ctx,
+		"CollectorExporter-Example",
+		trace.WithAttributes(commonTraceAttrs...),
+	)
+
+	defer span.End()
+
+	//example counter metric
+	counter, _ := ometer.
+		//MeterConfig(
+		//	serviceName,
+		//	metric.MeterConfig.InstrumentationVersion(serviceVersion),
+		//).
+		Int64Counter(
+			"add_counter",
+			metric.WithDescription("how many times addCounter function has been called."),
+		)
+
+	time.Sleep(10 * time.Second)
+
+	for i := 0; i < 5; i++ {
+		_, iSpan := tracer.Start(ctx, fmt.Sprintf("Sample-%d", i))
+		InfoLogger.Printf("Doing really hard work (%d / 5)\n", i+1)
+
+		counter.Add(
+			ctx,
+			1,
+		)
+
+		<-time.After(time.Second)
+		iSpan.End()
+	}
+
+	for n := 0; n < 1; n++ {
+		InfoLogger.Printf("Done!")
+		<-time.After(time.Second)
+	}
+	InfoLogger.Println("--------------------------------")
+
+	time.Sleep(10 * time.Second)
+
+}

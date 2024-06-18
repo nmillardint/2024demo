@@ -8,9 +8,9 @@ services:
     links:
        - mysql
     environment:
-      LUCEE_JAVA_OPTS: "-javaagent:/opt/fusionreactor/instance/lucee/fusionreactor.jar=name=Lucee,address=8088 -agentpath:/opt/fusionreactor/instance/lucee/libfrjvmti_x64.so -Dfrlicense=CLOUD-IGASY-N5MFU-3ORV4-QBU5Q-S453G"
+      LUCEE_JAVA_OPTS: "-javaagent:/opt/fusionreactor/instance/lucee/fusionreactor.jar=name=Lucee,address=8088 -agentpath:/opt/fusionreactor/instance/lucee/libfrjvmti_x64.so -Dfrlicense=CLOUD-WEKOF-DX0SK-BHM8P-E1XUM-K5HK8"
       acceptEULA: "YES"
-      password: "admin"
+      password: "a"
       FRNAME: "Lucee"
 
     volumes:
@@ -34,3 +34,24 @@ services:
       - type: bind
         source: ./jmeter/cfload.jmx
         target: /load.jmx
+
+  #OTEL Go app
+  go-app:
+    image: go-app
+    ports:
+    - 3000:3000
+    environment:
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://fr-observability:4318/v1/traces
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://fr-observability:4318/v1/metrics
+      - OTEL_SERVICE_NAME=appOTEL
+      - OTEL_RESOURCE_ATTRIBUTES="application=appOTEL"
+
+  #observability agent
+  fr-observability:
+    image: intergral/observability-agent:latest
+    ports:
+      - 12345:12345
+    environment:
+      - api_key=9e25437217e6129a10b420704ec7429316d681f75a9160598ad008911bb35c43567f0458b5cd575b21a5f4a7169963e4ad440d5cf02fef4cd961b2f6993dde21
+      - mysql_connection_string=root:my-secret-pw@(mysql:3306)/
+      - otel_collection=true

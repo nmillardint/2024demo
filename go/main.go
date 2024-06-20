@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/resource"
+
 	"github.com/gofiber/contrib/otelfiber"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+
 	//"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -69,23 +71,23 @@ func initTracer() *sdktrace.TracerProvider {
 }
 
 func getThing(ctx context.Context, id string) string {
-	thingCtx, span := tracer.Start(ctx, "getThing", oteltrace.WithAttributes(attribute.String("id", id)))
+	thingCtx, span := tracer.Start(ctx, "Checkout", oteltrace.WithAttributes(attribute.String("id", id)))
 	defer span.End()
-	if id == "1" {
-		return id + ": Hello Graeme"
-	} else if id == "2" {
-		return id + ": Hello Mikey"
-	} else if id == "3" {
-		return id + ": Hello Nicholas"
+	if id == "StockCheck" {
+		return id + ": Stock Available"
+	} else if id == "VerifyUser" {
+		return id + ": User Verified"
+	} else if id == "PurchasePending" {
+		return id + ": Purchase Complete"
 	}
 
 	dohttp(thingCtx, "childhttp")
 	dohttp(ctx, "siblinghttp")
 
-	return id + ": I don't know you"
+	return id + ": Purchase Failed"
 }
 
-func dohttp(ctx context.Context, spanName string){
+func dohttp(ctx context.Context, spanName string) {
 	_, span := tracer.Start(ctx, spanName)
 	defer span.End()
 

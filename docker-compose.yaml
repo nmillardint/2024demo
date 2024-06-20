@@ -55,3 +55,18 @@ services:
       - api_key=9e25437217e6129a10b420704ec7429316d681f75a9160598ad008911bb35c43567f0458b5cd575b21a5f4a7169963e4ad440d5cf02fef4cd961b2f6993dde21
       - mysql_connection_string=root:my-secret-pw@(mysql:3306)/
       - otel_collection=true
+
+  #spring java app
+  storefront:
+    image: storefront
+    stdin_open: true
+    tty: true
+    links:
+       - mysql
+    ports:
+      - "8092:8088"
+      - "8080:8080"
+      - "8182:8888"
+    volumes:
+      - "./logs:/opt/fusionreactor/instance/steamstorefront/log"
+      - "./archive:/opt/fusionreactor/instance/steamstorefront/archive"

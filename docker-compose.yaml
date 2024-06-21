@@ -8,7 +8,7 @@ services:
     links:
        - mysql
     environment:
-      LUCEE_JAVA_OPTS: "-javaagent:/opt/fusionreactor/instance/lucee/fusionreactor.jar=name=Lucee,address=8088 -agentpath:/opt/fusionreactor/instance/lucee/libfrjvmti_x64.so -Dfrlicense=CLOUD-WEKOF-DX0SK-BHM8P-E1XUM-K5HK8"
+      LUCEE_JAVA_OPTS: "-javaagent:/opt/fusionreactor/instance/lucee/fusionreactor.jar=name=Lucee,address=8088 -agentpath:/opt/fusionreactor/instance/lucee/libfrjvmti_x64.so -Dfrlicense=xxxxxxxxxxxx"
       acceptEULA: "YES"
       password: "a"
       FRNAME: "Lucee"
@@ -52,7 +52,7 @@ services:
     ports:
       - 12345:12345
     environment:
-      - api_key=9e25437217e6129a10b420704ec7429316d681f75a9160598ad008911bb35c43567f0458b5cd575b21a5f4a7169963e4ad440d5cf02fef4cd961b2f6993dde21
+      - api_key=xxxxxxxxxxxxxxxxxxx
       - mysql_connection_string=root:my-secret-pw@(mysql:3306)/
       - otel_collection=true
 
